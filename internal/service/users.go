@@ -5,21 +5,27 @@ import (
 	"errors"
 	"github.com/Roman-Shine/value_backend/internal/domain"
 	"github.com/Roman-Shine/value_backend/internal/repository"
+	"github.com/Roman-Shine/value_backend/pkg/hash"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
 type UsersService struct {
-	repo                   repository.Users
+	repo   repository.Users
+	hasher hash.PasswordHasher
+
+	emailService Emails
+
 	accessTokenTTL         time.Duration
 	refreshTokenTTL        time.Duration
 	verificationCodeLength int
 	domain                 string
 }
 
-func NewUsersService(repo repository.Users, accessTTL, refreshTTL time.Duration, verificationCodeLength int, domain string) *UsersService {
+func NewUsersService(repo repository.Users, hasher hash.PasswordHasher, accessTTL, refreshTTL time.Duration, verificationCodeLength int, domain string) *UsersService {
 	return &UsersService{
 		repo:                   repo,
+		hasher:                 hasher,
 		accessTokenTTL:         accessTTL,
 		refreshTokenTTL:        refreshTTL,
 		verificationCodeLength: verificationCodeLength,
@@ -28,19 +34,16 @@ func NewUsersService(repo repository.Users, accessTTL, refreshTTL time.Duration,
 }
 
 func (s *UsersService) SignUp(ctx context.Context, input UserSignUpInput) error {
-	//passwordHash, err := s.hasher.Hash(input.Password)
-	//if err != nil {
-	//	return err
-	//}
+	passwordHash, err := s.hasher.Hash(input.Password)
+	if err != nil {
+		return err
+	}
 
 	//verificationCode := s.otpGenerator.RandomSecret(s.verificationCodeLength)
 
 	user := domain.User{
-		Name: input.Name,
-
-		//Password:     passwordHash,
-		Password: input.Password,
-
+		Name:         input.Name,
+		Password:     passwordHash,
 		Phone:        input.Phone,
 		Email:        input.Email,
 		RegisteredAt: time.Now(),
@@ -59,13 +62,11 @@ func (s *UsersService) SignUp(ctx context.Context, input UserSignUpInput) error 
 	}
 
 	// todo. DECIDE ON EMAIL MARKETING STRATEGY
-
-	//return s.emailService.SendUserVerificationEmail(VerificationEmailInput{
-	//	Email:            user.Email,
-	//	Name:             user.Name,
-	//	VerificationCode: verificationCode,
-	//})
-	return nil
+	return s.emailService.SendUserVerificationEmail(VerificationEmailInput{
+		Email: user.Email,
+		Name:  user.Name,
+		//VerificationCode: verificationCode,
+	})
 }
 
 func (s *UsersService) SignIn(ctx context.Context, input UserSignInInput) (Tokens, error) {

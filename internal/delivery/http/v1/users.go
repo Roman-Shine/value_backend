@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func (h *Handler) initUsersRoutes(api *gin.RouterGroup) {
@@ -11,6 +12,13 @@ func (h *Handler) initUsersRoutes(api *gin.RouterGroup) {
 		users.POST("/sign-in", h.userSignIn)
 		//users.POST("/auth/refresh", h.userRefresh)
 	}
+}
+
+type userSignUpInput struct {
+	Name     string `json:"name" binding:"required,min=2,max=64"`
+	Email    string `json:"email" binding:"required,email,max=64"`
+	Phone    string `json:"phone" binding:"required,max=13"`
+	Password string `json:"password" binding:"required,min=8,max=64"`
 }
 
 // @Summary User SignUp
@@ -26,12 +34,12 @@ func (h *Handler) initUsersRoutes(api *gin.RouterGroup) {
 // @Failure default {object} response
 // @Router /users/sign-up [post]
 func (h *Handler) userSignUp(c *gin.Context) {
-	//var inp userSignUpInput
-	//if err := c.BindJSON(&inp); err != nil {
-	//	newResponse(c, http.StatusBadRequest, "invalid input body")
-	//
-	//	return
-	//}
+	var inp userSignUpInput
+	if err := c.BindJSON(&inp); err != nil {
+		newResponse(c, http.StatusBadRequest, "invalid input body")
+
+		return
+	}
 	//
 	//if err := h.services.Users.SignUp(c.Request.Context(), service.UserSignUpInput{
 	//	Name:     inp.Name,

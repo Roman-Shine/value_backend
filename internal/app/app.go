@@ -11,6 +11,7 @@ import (
 	"github.com/Roman-Shine/value_backend/pkg/auth"
 	"github.com/Roman-Shine/value_backend/pkg/cache"
 	"github.com/Roman-Shine/value_backend/pkg/database/mongodb"
+	"github.com/Roman-Shine/value_backend/pkg/hash"
 	"github.com/Roman-Shine/value_backend/pkg/logger"
 	"net/http"
 	"os"
@@ -37,6 +38,7 @@ func Run(configPath string) {
 	db := mongoClient.Database(cfg.Mongo.Name)
 
 	memCache := cache.NewMemoryCache()
+	hasher := hash.NewSHA1Hasher(cfg.Auth.PasswordSalt)
 
 	tokenManager, err := auth.NewManager(cfg.Auth.JWT.SigningKey)
 	if err != nil {
@@ -50,6 +52,7 @@ func Run(configPath string) {
 	services := service.NewServices(service.Deps{
 		Repos:                  repos,
 		Cache:                  memCache,
+		Hasher:                 hasher,
 		AccessTokenTTL:         cfg.Auth.JWT.AccessTokenTTL,
 		RefreshTokenTTL:        cfg.Auth.JWT.RefreshTokenTTL,
 		CacheTTL:               int64(cfg.CacheTTL.Seconds()),

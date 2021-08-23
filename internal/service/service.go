@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Roman-Shine/value_backend/internal/repository"
 	"github.com/Roman-Shine/value_backend/pkg/cache"
+	"github.com/Roman-Shine/value_backend/pkg/hash"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
@@ -32,6 +33,17 @@ type Users interface {
 	Verify(ctx context.Context, userId primitive.ObjectID, hash string) error
 }
 
+type Emails interface {
+	SendUserVerificationEmail(VerificationEmailInput) error
+}
+
+type VerificationEmailInput struct {
+	Email            string
+	Name             string
+	VerificationCode string
+	Domain           string
+}
+
 type Services struct {
 	Users Users
 }
@@ -39,6 +51,7 @@ type Services struct {
 type Deps struct {
 	Repos                  *repository.Repositories
 	Cache                  cache.Cache
+	Hasher                 hash.PasswordHasher
 	AccessTokenTTL         time.Duration
 	RefreshTokenTTL        time.Duration
 	PaymentCallbackURL     string
@@ -50,7 +63,7 @@ type Deps struct {
 }
 
 func NewServices(deps Deps) *Services {
-	usersService := NewUsersService(deps.Repos.Users, deps.AccessTokenTTL, deps.RefreshTokenTTL, deps.VerificationCodeLength, deps.Domain)
+	usersService := NewUsersService(deps.Repos.Users, deps.Hasher, deps.AccessTokenTTL, deps.RefreshTokenTTL, deps.VerificationCodeLength, deps.Domain)
 
 	return &Services{
 		Users: usersService,
