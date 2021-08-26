@@ -73,14 +73,10 @@ func (r *UsersRepo) Verify(ctx context.Context, userId primitive.ObjectID, code 
 	return nil
 }
 
+// TODO ADD SetSession func
+
 //func (r *UsersRepo) SetSession(ctx context.Context, userId primitive.ObjectID, session domain.Session) error {
 //	_, err := r.db.UpdateOne(ctx, bson.M{"_id": userId}, bson.M{"$set": bson.M{"session": session, "lastVisitAt": time.Now()}})
 //
 //	return err
 //}
-
-func (r *UsersRepo) AttachSchool(ctx context.Context, userId, schoolId primitive.ObjectID) error {
-	_, err := r.db.UpdateOne(ctx, bson.M{"_id": userId}, bson.M{"$push": bson.M{"schools": schoolId}})
-
-	return err
-}

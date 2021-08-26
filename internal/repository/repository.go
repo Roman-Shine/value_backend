@@ -13,7 +13,6 @@ type Users interface {
 	GetByRefreshToken(ctx context.Context, refreshToken string) (domain.User, error)
 	Verify(ctx context.Context, userId primitive.ObjectID, code string) error
 	//SetSession(ctx context.Context, userId primitive.ObjectID, session domain.Session) error
-	AttachSchool(ctx context.Context, userId, schoolId primitive.ObjectID) error
 }
 
 type Repositories struct {
