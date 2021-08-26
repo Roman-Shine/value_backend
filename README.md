@@ -16,3 +16,6 @@ HTTP_HOST=localhost
 ```
 
 Use `make run` to build&run project
+
+
+If you are using Linux, uncomment line 7 in the Makefile and comment out line 6
