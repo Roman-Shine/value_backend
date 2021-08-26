@@ -29,6 +29,11 @@ type signInInput struct {
 	Password string `json:"password" binding:"required,min=8,max=64"`
 }
 
+type tokenResponse struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
 // @Summary User SignUp
 // @Tags users-auth
 // @Description create user account
@@ -88,25 +93,25 @@ func (h *Handler) userSignIn(c *gin.Context) {
 
 		return
 	}
-	//
-	//res, err := h.services.Users.SignIn(c.Request.Context(), service.UserSignInInput{
-	//	Email:    inp.Email,
-	//	Password: inp.Password,
-	//})
-	//if err != nil {
-	//	if errors.Is(err, domain.ErrUserNotFound) {
-	//		newResponse(c, http.StatusBadRequest, err.Error())
-	//
-	//		return
-	//	}
-	//
-	//	newResponse(c, http.StatusInternalServerError, err.Error())
-	//
-	//	return
-	//}
-	//
-	//c.JSON(http.StatusOK, tokenResponse{
-	//	AccessToken:  res.AccessToken,
-	//	RefreshToken: res.RefreshToken,
-	//})
+
+	res, err := h.services.Users.SignIn(c.Request.Context(), service.UserSignInInput{
+		Email:    inp.Email,
+		Password: inp.Password,
+	})
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			newResponse(c, http.StatusBadRequest, err.Error())
+
+			return
+		}
+
+		newResponse(c, http.StatusInternalServerError, err.Error())
+
+		return
+	}
+
+	c.JSON(http.StatusOK, tokenResponse{
+		AccessToken:  res.AccessToken,
+		RefreshToken: res.RefreshToken,
+	})
 }

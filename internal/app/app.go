@@ -53,6 +53,7 @@ func Run(configPath string) {
 		Repos:                  repos,
 		Cache:                  memCache,
 		Hasher:                 hasher,
+		TokenManager:           tokenManager,
 		AccessTokenTTL:         cfg.Auth.JWT.AccessTokenTTL,
 		RefreshTokenTTL:        cfg.Auth.JWT.RefreshTokenTTL,
 		CacheTTL:               int64(cfg.CacheTTL.Seconds()),

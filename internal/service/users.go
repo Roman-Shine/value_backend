@@ -5,14 +5,16 @@ import (
 	"errors"
 	"github.com/Roman-Shine/value_backend/internal/domain"
 	"github.com/Roman-Shine/value_backend/internal/repository"
+	"github.com/Roman-Shine/value_backend/pkg/auth"
 	"github.com/Roman-Shine/value_backend/pkg/hash"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
 type UsersService struct {
-	repo   repository.Users
-	hasher hash.PasswordHasher
+	repo         repository.Users
+	hasher       hash.PasswordHasher
+	tokenManager auth.TokenManager
 
 	emailService Emails
 
@@ -22,10 +24,11 @@ type UsersService struct {
 	domain                 string
 }
 
-func NewUsersService(repo repository.Users, hasher hash.PasswordHasher, accessTTL, refreshTTL time.Duration, verificationCodeLength int, domain string) *UsersService {
+func NewUsersService(repo repository.Users, hasher hash.PasswordHasher, tokenManager auth.TokenManager, accessTTL, refreshTTL time.Duration, verificationCodeLength int, domain string) *UsersService {
 	return &UsersService{
 		repo:                   repo,
 		hasher:                 hasher,
+		tokenManager:           tokenManager,
 		accessTokenTTL:         accessTTL,
 		refreshTokenTTL:        refreshTTL,
 		verificationCodeLength: verificationCodeLength,
@@ -61,7 +64,7 @@ func (s *UsersService) SignUp(ctx context.Context, input UserSignUpInput) error 
 		return err
 	}
 
-	// todo. DECIDE ON EMAIL MARKETING STRATEGY
+	// TODO add verification...
 	return s.emailService.SendUserVerificationEmail(VerificationEmailInput{
 		Email: user.Email,
 		Name:  user.Name,
@@ -88,12 +91,12 @@ func (s *UsersService) SignIn(ctx context.Context, input UserSignInInput) (Token
 }
 
 func (s *UsersService) RefreshTokens(ctx context.Context, refreshToken string) (Tokens, error) {
-	student, err := s.repo.GetByRefreshToken(ctx, refreshToken)
+	user, err := s.repo.GetByRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return Tokens{}, err
 	}
 
-	return s.createSession(ctx, student.ID)
+	return s.createSession(ctx, user.ID)
 }
 
 func (s *UsersService) Verify(ctx context.Context, userId primitive.ObjectID, hash string) error {
@@ -110,34 +113,27 @@ func (s *UsersService) Verify(ctx context.Context, userId primitive.ObjectID, ha
 }
 
 func (s *UsersService) createSession(ctx context.Context, userId primitive.ObjectID) (Tokens, error) {
-	var res Tokens
-	res.AccessToken = string("123")
-	res.RefreshToken = string("123")
-	return res, nil
-}
+	var (
+		res Tokens
+		err error
+	)
 
-//func (s *UsersService) createSession(ctx context.Context, userId primitive.ObjectID) (Tokens, error) {
-//	var (
-//		res Tokens
-//		err error
-//	)
-//
-//	res.AccessToken, err = s.tokenManager.NewJWT(userId.Hex(), s.accessTokenTTL)
-//	if err != nil {
-//		return res, err
-//	}
-//
-//	res.RefreshToken, err = s.tokenManager.NewRefreshToken()
-//	if err != nil {
-//		return res, err
-//	}
-//
-//	session := domain.Session{
-//		RefreshToken: res.RefreshToken,
-//		ExpiresAt:    time.Now().Add(s.refreshTokenTTL),
-//	}
-//
-//	err = s.repo.SetSession(ctx, userId, session)
-//
-//	return res, err
-//}
+	res.AccessToken, err = s.tokenManager.NewJWT(userId.Hex(), s.accessTokenTTL)
+	if err != nil {
+		return res, err
+	}
+
+	res.RefreshToken, err = s.tokenManager.NewRefreshToken()
+	if err != nil {
+		return res, err
+	}
+
+	session := domain.Session{
+		RefreshToken: res.RefreshToken,
+		ExpiresAt:    time.Now().Add(s.refreshTokenTTL),
+	}
+
+	err = s.repo.SetSession(ctx, userId, session)
+
+	return res, err
+}
