@@ -70,13 +70,12 @@ func (s *UsersService) SignUp(ctx context.Context, input UserSignUpInput) error 
 }
 
 func (s *UsersService) SignIn(ctx context.Context, input UserSignInInput) (Tokens, error) {
-	//passwordHash, err := s.hasher.Hash(input.Password)
-	//if err != nil {
-	//	return Tokens{}, err
-	//}
+	passwordHash, err := s.hasher.Hash(input.Password)
+	if err != nil {
+		return Tokens{}, err
+	}
 
-	//user, err := s.repo.GetByCredentials(ctx, input.Email, passwordHash)
-	user, err := s.repo.GetByCredentials(ctx, input.Email, input.Password)
+	user, err := s.repo.GetByCredentials(ctx, input.Email, passwordHash)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			return Tokens{}, err

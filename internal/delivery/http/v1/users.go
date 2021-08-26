@@ -24,6 +24,11 @@ type userSignUpInput struct {
 	Password string `json:"password" binding:"required,min=8,max=64"`
 }
 
+type signInInput struct {
+	Email    string `json:"email" binding:"required,email,max=64"`
+	Password string `json:"password" binding:"required,min=8,max=64"`
+}
+
 // @Summary User SignUp
 // @Tags users-auth
 // @Description create user account
@@ -77,12 +82,12 @@ func (h *Handler) userSignUp(c *gin.Context) {
 // @Failure default {object} response
 // @Router /users/sign-in [post]
 func (h *Handler) userSignIn(c *gin.Context) {
-	//var inp signInInput
-	//if err := c.BindJSON(&inp); err != nil {
-	//	newResponse(c, http.StatusBadRequest, "invalid input body")
-	//
-	//	return
-	//}
+	var inp signInInput
+	if err := c.BindJSON(&inp); err != nil {
+		newResponse(c, http.StatusBadRequest, "invalid input body")
+
+		return
+	}
 	//
 	//res, err := h.services.Users.SignIn(c.Request.Context(), service.UserSignInInput{
 	//	Email:    inp.Email,
