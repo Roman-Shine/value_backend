@@ -1,6 +1,9 @@
 package v1
 
 import (
+	"errors"
+	"github.com/Roman-Shine/value_backend/internal/domain"
+	"github.com/Roman-Shine/value_backend/internal/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -40,25 +43,25 @@ func (h *Handler) userSignUp(c *gin.Context) {
 
 		return
 	}
-	//
-	//if err := h.services.Users.SignUp(c.Request.Context(), service.UserSignUpInput{
-	//	Name:     inp.Name,
-	//	Email:    inp.Email,
-	//	Phone:    inp.Phone,
-	//	Password: inp.Password,
-	//}); err != nil {
-	//	if errors.Is(err, domain.ErrUserAlreadyExists) {
-	//		newResponse(c, http.StatusBadRequest, err.Error())
-	//
-	//		return
-	//	}
-	//
-	//	newResponse(c, http.StatusInternalServerError, err.Error())
-	//
-	//	return
-	//}
-	//
-	//c.Status(http.StatusCreated)
+
+	if err := h.services.Users.SignUp(c.Request.Context(), service.UserSignUpInput{
+		Name:     inp.Name,
+		Email:    inp.Email,
+		Phone:    inp.Phone,
+		Password: inp.Password,
+	}); err != nil {
+		if errors.Is(err, domain.ErrUserAlreadyExists) {
+			newResponse(c, http.StatusBadRequest, err.Error())
+
+			return
+		}
+
+		newResponse(c, http.StatusInternalServerError, err.Error())
+
+		return
+	}
+
+	c.Status(http.StatusCreated)
 }
 
 // @Summary User SignIn
